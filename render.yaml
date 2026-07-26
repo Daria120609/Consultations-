@@ -4,6 +4,8 @@ services:
     runtime: python
     repo: https://github.com/rdbwk7z84d-ship-it/consultations
     plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app
     envVars:
       - key: BOT_TOKEN
         value: 8510661599:AAHS65zDE4p-8A2CX1N9t-7h0p8Ix4MgW3Y
@@ -11,3 +13,5 @@ services:
         value: 8695107966
       - key: ADMIN_CHANNEL_ID
         value: -1004321519689
+      - key: RENDER_EXTERNAL_URL
+        value: https://consultations-5ct.onrender.com
