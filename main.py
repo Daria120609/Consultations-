@@ -1,16 +1,12 @@
-# main.py
 import asyncio
-import json
 import os
 import logging
 from datetime import datetime
-from flask import Flask, request
+from flask import Flask
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram import F
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
 import threading
 
 # ========== НАСТРОЙКИ ==========
@@ -20,7 +16,6 @@ ADMIN_CHANNEL_ID = os.getenv("ADMIN_CHANNEL_ID", "-1004321519689")
 PAYMENT_LINK = os.getenv("PAYMENT_LINK", "https://crm2.webpay.by/pub/mail/click.php?tag=crm.eyJ1cm4iOiI2NDk4MzAtQ1hIQTNJIn0%3D&url=https%3A%2F%2Fisnastc.w-p.by%2F&sign=3f77f7ddcfa8d700501d5d92b164e2efeb404a99d5121ea3f1675e067b6f7e67")
 SUPPORT_USERNAME = os.getenv("SUPPORT_USERNAME", "qwzzsx")
 BLOGGER_USERNAME = os.getenv("BLOGGER_USERNAME", "shooting_consultant")
-WEBHOOK_URL = os.getenv("RENDER_EXTERNAL_URL", "https://consultations-5ct.onrender.com") + "/webhook"
 PORT = int(os.getenv("PORT", 10000))
 
 # ================================================
@@ -678,44 +673,31 @@ async def reset_command(message: types.Message):
     kb.append([InlineKeyboardButton(text="🏠 Главная панель", callback_data="admin_panel")])
     await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
 
-# ========== WEBHOOK SETUP ==========
-async def on_startup():
-    await bot.set_webhook(WEBHOOK_URL)
-    await update_admin_panel()
-    logger.info(f"Webhook установлен: {WEBHOOK_URL}")
-
-# ========== FLASK APP ==========
+# ========== FLASK APP ДЛЯ HEALTH CHECK ==========
 app = Flask(__name__)
 
 @app.route('/')
 def health():
     return "OK", 200
 
+@app.route('/health')
+def health_check():
+    return "OK", 200
+
 # ========== ЗАПУСК ==========
 if __name__ == "__main__":
-    # Запускаем бота в отдельном потоке через aiohttp
-    from aiohttp import web
-    import asyncio
+    # Запускаем Flask в отдельном потоке для health check
+    def run_flask():
+        app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
     
-    async def start_bot():
-        await on_startup()
-        # Создаем aiohttp приложение
-        app_web = web.Application()
-        # Настраиваем вебхук
-        webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-        webhook_requests_handler.register(app_web, path="/webhook")
-        setup_application(app_web, dp, bot=bot)
-        # Запускаем сервер
-        runner = web.AppRunner(app_web)
-        await runner.setup()
-        site = web.TCPSite(runner, host="0.0.0.0", port=PORT)
-        await site.start()
-        logger.info(f"Сервер запущен на порту {PORT}")
-        # Держим процесс живым
-        await asyncio.Event().wait()
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    logger.info(f"Flask health check запущен на порту {PORT}")
     
+    # Запускаем бота через polling
+    logger.info("Бот запускается через polling...")
     try:
-        asyncio.run(start_bot())
+        asyncio.run(dp.start_polling(bot))
     except KeyboardInterrupt:
         logger.info("Бот остановлен")
     except Exception as e:
