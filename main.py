@@ -35,7 +35,6 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 # Используем Supabase вместо JSON файлов
-# Бесплатно: https://supabase.com
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
