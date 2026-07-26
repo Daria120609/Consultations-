@@ -15,3 +15,7 @@ services:
         value: -1004321519689
       - key: RENDER_EXTERNAL_URL
         value: https://consultations-5ct.onrender.com
+      - key: SUPPORT_USERNAME
+        value: qwzzsx
+      - key: BLOGGER_USERNAME
+        value: shooting_consultant
