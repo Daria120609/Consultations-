@@ -1,0 +1,14 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    # Каждые 14 минут (бесплатный лимит на Render — 15 минут бездействия)
+    - cron: '*/14 * * * *'
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render service
+        run: |
+          curl -sSf https://consultations-5ct.onrender.com > /dev/null || true
